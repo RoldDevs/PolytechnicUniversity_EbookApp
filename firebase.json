@@ -1,0 +1,32 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "ebookapp-9cdd5",
+          "appId": "1:507046914533:android:55ab33ef055e389bff670c",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "ebookapp-9cdd5",
+          "configurations": {
+            "android": "1:507046914533:android:55ab33ef055e389bff670c",
+            "ios": "1:507046914533:ios:be0921b0fbdb3b8dff670c",
+            "macos": "1:507046914533:ios:be0921b0fbdb3b8dff670c",
+            "web": "1:507046914533:web:996975add63813f9ff670c",
+            "windows": "1:507046914533:web:915698731fb9d0afff670c"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "database": {
+    "rules": "database.rules.json"
+  }
+}
