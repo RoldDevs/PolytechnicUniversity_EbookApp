@@ -4,17 +4,30 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import 'admin/admin.dart';
 import 'user/users.dart';
 
+const supabaseUrl = 'https://uetgbnuagcjjdqymkhuk.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVldGdibnVhZ2NqamRxeW1raHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyMTgxNzMsImV4cCI6MjA2NDc5NDE3M30.xi1L1ELsTzo4KKA_fWBPnc-2b8SAZh85v5WEQq8cZzs';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: supabaseUrl,
+    anonKey: supabaseKey,
+  );
+  
   runApp(const MyApp());
 }
 
@@ -145,35 +158,49 @@ class _OnboardingPagesState extends State<OnboardingPages> {
     }
   }
 
-
-  Future<void> signup() async {
+  Future<void> signup(
+    BuildContext context,
+    String email,
+    String password,
+    Function(String?) onError,
+  ) async {
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: signupEmailController.text.trim(),
-        password: signupPasswordController.text,
+      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
       );
-      setState(() => SignuperrorMessage = null); // Clear error on success
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Sign up successful! Redirecting."),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Redirect to user panel
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const UserPanel()),
+      );
+
+      onError(null); // Clear error if any
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        switch (e.code) {
-          case 'email-already-in-use':
-            SignuperrorMessage = 'The email address is already registered.';
-            break;
-          case 'invalid-email':
-            SignuperrorMessage = 'The email address is not valid.';
-            break;
-          case 'operation-not-allowed':
-            SignuperrorMessage = 'Email/password sign-up is not enabled.';
-            break;
-          case 'weak-password':
-            SignuperrorMessage = 'The password is too weak.';
-            break;
-          default:
-            SignuperrorMessage = 'Signup failed: ${e.message}';
-        }
-      });
+      switch (e.code) {
+        case 'email-already-in-use':
+          onError('Email is already in use.');
+          break;
+        case 'invalid-email':
+          onError('Invalid email address.');
+          break;
+        case 'weak-password':
+          onError('Password is too weak.');
+          break;
+        default:
+          onError('Sign up failed: ${e.message}');
+      }
     } catch (e) {
-      setState(() => SignuperrorMessage = 'An unexpected error occurred: $e');
+      onError('An unexpected error occurred: $e');
     }
   }
 
@@ -446,7 +473,12 @@ class _OnboardingPagesState extends State<OnboardingPages> {
                       ),
                       onPressed: () {
                         if (_signupFormKey.currentState!.validate()) {
-                          signup();
+                          signup(
+                            context,
+                            signupEmailController.text,
+                            signupPasswordController.text,
+                            (err) => setState(() => SignuperrorMessage = err),
+                          );
                         }
                       },
                       child: const Text('Sign Up', style: TextStyle(fontSize: 16)),
