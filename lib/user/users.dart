@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../main.dart'; // Make sure this points back to your login screen
+import '../main.dart'; // Replace with correct path to your login entry
 
-class AdminPanel extends StatefulWidget {
-  const AdminPanel({super.key});
+class UserPanel extends StatefulWidget {
+  const UserPanel({super.key});
 
   @override
-  State<AdminPanel> createState() => _AdminPanelState();
+  State<UserPanel> createState() => _UserState();
 }
 
-class _AdminPanelState extends State<AdminPanel> {
+class _UserState extends State<UserPanel> {
   void _logout() async {
     await FirebaseAuth.instance.signOut();
     if (mounted) {
@@ -23,9 +23,8 @@ class _AdminPanelState extends State<AdminPanel> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Admin Panel'),
+        title: const Text('User Panel'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -35,7 +34,7 @@ class _AdminPanelState extends State<AdminPanel> {
         ],
       ),
       body: const Center(
-        child: Text('Welcome Admin!'),
+        child: Text('Welcome User!'),
       ),
     );
   }

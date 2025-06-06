@@ -7,6 +7,9 @@ import 'package:flutter/services.dart';
 import 'firebase_options.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
+import 'admin/admin.dart';
+import 'user/users.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -97,38 +100,51 @@ class _OnboardingPagesState extends State<OnboardingPages> {
     _connectivity.checkConnectivity().then((result) {
       setState(() => isOffline = result == ConnectivityResult.none);
     });
-  }
+  } 
 
-  Future<void> login() async {
+  Future<void> login(BuildContext context, String email, String password, Function(String?) onError) async {
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text,
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
       );
-      setState(() => LoginerrorMessage = null); // Clear error on success
+
+      final userEmail = credential.user?.email ?? '';
+
+      if (userEmail == 'admin@panel.org') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminPanel()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const UserPanel()),
+        );
+      }
+      onError(null); // Clear any error
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        switch (e.code) {
-          case 'user-not-found':
-            LoginerrorMessage = 'No user found for that email.';
-            break;
-          case 'wrong-password':
-            LoginerrorMessage = 'Incorrect password.';
-            break;
-          case 'invalid-email':
-            LoginerrorMessage = 'Invalid email address.';
-            break;
-          case 'user-disabled':
-            LoginerrorMessage = 'This account has been disabled.';
-            break;
-          default:
-            LoginerrorMessage = 'Login failed: ${e.message}';
-        }
-      });
+      switch (e.code) {
+        case 'user-not-found':
+          onError('No user found for that email.');
+          break;
+        case 'wrong-password':
+          onError('Incorrect password.');
+          break;
+        case 'invalid-email':
+          onError('Invalid email address.');
+          break;
+        case 'user-disabled':
+          onError('This account has been disabled.');
+          break;
+        default:
+          onError('Login failed: ${e.message}');
+      }
     } catch (e) {
-      setState(() => LoginerrorMessage = 'An unexpected error occurred: $e');
+      onError('An unexpected error occurred: $e');
     }
   }
+
 
   Future<void> signup() async {
     try {
@@ -330,7 +346,12 @@ class _OnboardingPagesState extends State<OnboardingPages> {
                       ),
                       onPressed: () {
                         if (_loginFormKey.currentState!.validate()) {
-                          login(); // Call your login logic
+                          login(
+                            context,
+                            emailController.text,
+                            passwordController.text,
+                            (err) => setState(() => LoginerrorMessage = err),
+                          );
                         }
                       },
                       child: const Text('Login', 
