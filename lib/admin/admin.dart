@@ -182,16 +182,24 @@ class _AdminPanelState extends State<AdminPanel> {
   }
 
   Widget _buildUploadScreen() {
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 400;
+    final padding = isSmallScreen ? 8.0 : 16.0;
+    final spacing = isSmallScreen ? 8.0 : 12.0;
+    
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Upload New eBook',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: isSmallScreen ? 20 : 24, 
+              fontWeight: FontWeight.bold
+            ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: spacing * 1.5),
           TextField(
             controller: _titleController,
             decoration: const InputDecoration(
@@ -199,7 +207,7 @@ class _AdminPanelState extends State<AdminPanel> {
               border: OutlineInputBorder(),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
           TextField(
             controller: _authorController,
             decoration: const InputDecoration(
@@ -207,7 +215,7 @@ class _AdminPanelState extends State<AdminPanel> {
               border: OutlineInputBorder(),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
           TextField(
             controller: _yearController,
             decoration: const InputDecoration(
@@ -216,7 +224,7 @@ class _AdminPanelState extends State<AdminPanel> {
             ),
             keyboardType: TextInputType.number,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
           TextField(
             controller: _descriptionController,
             decoration: const InputDecoration(
@@ -225,16 +233,16 @@ class _AdminPanelState extends State<AdminPanel> {
             ),
             maxLines: 3,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: spacing * 1.5),
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _pickPdf,
                   icon: const Icon(Icons.upload_file),
-                  label: const Text('Select PDF'),
+                  label: Text(isSmallScreen ? 'PDF' : 'Select PDF'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 12),
                   ),
                 ),
               ),
@@ -242,19 +250,23 @@ class _AdminPanelState extends State<AdminPanel> {
           ),
           if (_pdfName != null)
             Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Text('Selected PDF: $_pdfName'),
+              padding: EdgeInsets.only(top: spacing * 0.5),
+              child: Text(
+                'Selected PDF: $_pdfName',
+                style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          const SizedBox(height: 12),
+          SizedBox(height: spacing),
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _pickCover,
                   icon: const Icon(Icons.image),
-                  label: const Text('Select Cover Image (Optional)'),
+                  label: Text(isSmallScreen ? 'Cover Image' : 'Select Cover Image (Optional)'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 8 : 12),
                   ),
                 ),
               ),
@@ -262,10 +274,14 @@ class _AdminPanelState extends State<AdminPanel> {
           ),
           if (_coverName != null)
             Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Text('Selected Cover: $_coverName'),
+              padding: EdgeInsets.only(top: spacing * 0.5),
+              child: Text(
+                'Selected Cover: $_coverName',
+                style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          const SizedBox(height: 24),
+          SizedBox(height: spacing * 2),
           Row(
             children: [
               Expanded(
@@ -274,11 +290,11 @@ class _AdminPanelState extends State<AdminPanel> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: isSmallScreen ? 12 : 16),
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Upload eBook'),
+                      : Text(isSmallScreen ? 'Upload' : 'Upload eBook'),
                 ),
               ),
             ],
@@ -297,28 +313,44 @@ class _AdminPanelState extends State<AdminPanel> {
       return const Center(child: Text('No eBooks available'));
     }
 
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 400;
+    
     return ListView.builder(
       itemCount: _ebooks.length,
       itemBuilder: (context, index) {
         final ebook = _ebooks[index];
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          margin: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 8 : 16, 
+            vertical: isSmallScreen ? 4 : 8
+          ),
           child: ListTile(
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 8 : 16,
+              vertical: isSmallScreen ? 4 : 8,
+            ),
             leading: ebook.coverUrl != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: Image.network(
                       ebook.coverUrl!,
-                      width: 50,
-                      height: 70,
+                      width: isSmallScreen ? 40 : 50,
+                      height: isSmallScreen ? 60 : 70,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.book, size: 50),
+                          Icon(Icons.book, size: isSmallScreen ? 40 : 50),
                     ),
                   )
-                : const Icon(Icons.book, size: 50),
-            title: Text(ebook.title),
-            subtitle: Text('${ebook.author} (${ebook.year})'),
+                : Icon(Icons.book, size: isSmallScreen ? 40 : 50),
+            title: Text(
+              ebook.title,
+              style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+            ),
+            subtitle: Text(
+              '${ebook.author} (${ebook.year})',
+              style: TextStyle(fontSize: isSmallScreen ? 12 : 14),
+            ),
             trailing: IconButton(
               icon: const Icon(Icons.delete, color: Colors.red),
               onPressed: () => _showDeleteConfirmation(ebook),
@@ -355,32 +387,41 @@ class _AdminPanelState extends State<AdminPanel> {
   }
 
   void _showEbookDetails(Ebook ebook) {
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 400;
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(ebook.title),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (ebook.coverUrl != null)
-                Center(
-                  child: Image.network(
-                    ebook.coverUrl!,
-                    height: 200,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.broken_image, size: 100),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: screenSize.height * 0.7,
+            maxWidth: screenSize.width * 0.9,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (ebook.coverUrl != null)
+                  Center(
+                    child: Image.network(
+                      ebook.coverUrl!,
+                      height: isSmallScreen ? 150 : 200,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.broken_image, size: 100),
+                    ),
                   ),
-                ),
-              const SizedBox(height: 16),
-              Text('Author: ${ebook.author}'),
-              Text('Year: ${ebook.year}'),
-              const SizedBox(height: 8),
-              const Text('Description:', style: TextStyle(fontWeight: FontWeight.bold)),
-              Text(ebook.description),
-            ],
+                SizedBox(height: isSmallScreen ? 8 : 16),
+                Text('Author: ${ebook.author}'),
+                Text('Year: ${ebook.year}'),
+                SizedBox(height: isSmallScreen ? 4 : 8),
+                const Text('Description:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(ebook.description),
+              ],
+            ),
           ),
         ),
         actions: [

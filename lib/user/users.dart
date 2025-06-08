@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../main.dart';
+import '../main.dart'; // This imports our ResponsiveUtil class
 import '../models/ebook_model.dart';
 import '../services/ebook_service.dart';
 
@@ -160,10 +160,14 @@ class _UserState extends State<UserPanel> {
 
   @override
   Widget build(BuildContext context) {
+    // Get screen size information
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width < 400;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('eBook Library'),
-        actions: [
+        actions: [  
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadEbooks,
@@ -178,64 +182,118 @@ class _UserState extends State<UserPanel> {
       ),
       body: Column(
         children: [
-          // Search bar
+          // Search bar - Adaptive for different screen sizes
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(isSmallScreen ? 4.0 : 8.0),
             child: Card(
               elevation: 4,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                child: Row(
-                  children: [
-                    // Search type dropdown
-                    DropdownButton<String>(
-                      value: _searchType,
-                      underline: const SizedBox(),
-                      items: const [
-                        DropdownMenuItem(value: 'title', child: Text('Title')),
-                        DropdownMenuItem(value: 'author', child: Text('Author')),
-                        DropdownMenuItem(value: 'year', child: Text('Year')),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => _searchType = value);
-                          if (_searchController.text.isNotEmpty) {
-                            _searchEbooks();
-                          }
-                        }
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    // Search field
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Search by ${_searchType}...',
-                          border: InputBorder.none,
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _filteredEbooks = _ebooks);
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 4.0 : 8.0,
+                  vertical: isSmallScreen ? 2.0 : 4.0,
+                ),
+                child: isSmallScreen
+                    // Stacked layout for small screens
+                    ? Column(
+                        children: [
+                          Row(
+                            children: [
+                              // Search type dropdown
+                              DropdownButton<String>(
+                                value: _searchType,
+                                underline: const SizedBox(),
+                                items: const [
+                                  DropdownMenuItem(value: 'title', child: Text('Title')),
+                                  DropdownMenuItem(value: 'author', child: Text('Author')),
+                                  DropdownMenuItem(value: 'year', child: Text('Year')),
+                                ],
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() => _searchType = value);
+                                    if (_searchController.text.isNotEmpty) {
+                                      _searchEbooks();
+                                    }
+                                  }
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              // Search button
+                              IconButton(
+                                icon: const Icon(Icons.search),
+                                onPressed: _searchEbooks,
+                              ),
+                            ],
+                          ),
+                          // Search field
+                          TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search by ${_searchType}...',
+                              border: InputBorder.none,
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _filteredEbooks = _ebooks);
+                                },
+                              ),
+                            ),
+                            onSubmitted: (_) => _searchEbooks(),
+                          ),
+                        ],
+                      )
+                    // Row layout for larger screens
+                    : Row(
+                        children: [
+                          // Search type dropdown
+                          DropdownButton<String>(
+                            value: _searchType,
+                            underline: const SizedBox(),
+                            items: const [
+                              DropdownMenuItem(value: 'title', child: Text('Title')),
+                              DropdownMenuItem(value: 'author', child: Text('Author')),
+                              DropdownMenuItem(value: 'year', child: Text('Year')),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _searchType = value);
+                                if (_searchController.text.isNotEmpty) {
+                                  _searchEbooks();
+                                }
+                              }
                             },
                           ),
-                        ),
-                        onSubmitted: (_) => _searchEbooks(),
+                          const SizedBox(width: 8),
+                          // Search field
+                          Expanded(
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Search by ${_searchType}...',
+                                border: InputBorder.none,
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _filteredEbooks = _ebooks);
+                                  },
+                                ),
+                              ),
+                              onSubmitted: (_) => _searchEbooks(),
+                            ),
+                          ),
+                          // Search button
+                          IconButton(
+                            icon: const Icon(Icons.search),
+                            onPressed: _searchEbooks,
+                          ),
+                        ],
                       ),
-                    ),
-                    // Search button
-                    IconButton(
-                      icon: const Icon(Icons.search),
-                      onPressed: _searchEbooks,
-                    ),
-                  ],
-                ),
               ),
             ),
           ),
-          // Ebooks grid
+          // Ebooks grid - Responsive grid
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -244,79 +302,90 @@ class _UserState extends State<UserPanel> {
                     : RefreshIndicator(
                         onRefresh: _loadEbooks,
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: GridView.builder(
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 0.7,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10,
-                            ),
-                            itemCount: _filteredEbooks.length,
-                            itemBuilder: (context, index) {
-                              final ebook = _filteredEbooks[index];
-                              return GestureDetector(
-                                onTap: () => _showEbookDetails(ebook),
-                                child: Card(
-                                  elevation: 4,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: ClipRRect(
-                                          borderRadius: const BorderRadius.vertical(
-                                            top: Radius.circular(10),
-                                          ),
-                                          child: ebook.coverUrl != null
-                                              ? Image.network(
-                                                  ebook.coverUrl!,
-                                                  width: double.infinity,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error, stackTrace) =>
-                                                      Container(
-                                                        color: Colors.grey[300],
-                                                        child: const Icon(Icons.book, size: 50),
-                                                      ),
-                                                )
-                                              : Container(
-                                                  color: Colors.grey[300],
-                                                  child: const Icon(Icons.book, size: 50),
-                                                ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              ebook.title,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              ebook.author,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[700],
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                          padding: EdgeInsets.all(isSmallScreen ? 4.0 : 8.0),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              // Calculate optimal grid layout based on available width
+                              final crossAxisCount = constraints.maxWidth < 400 ? 1 :
+                                                    constraints.maxWidth < 650 ? 2 :
+                                                    constraints.maxWidth < 900 ? 3 : 4;
+                              
+                              final childAspectRatio = constraints.maxWidth < 400 ? 0.8 : 0.7;
+                              
+                              return GridView.builder(
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  childAspectRatio: childAspectRatio,
+                                  crossAxisSpacing: isSmallScreen ? 5 : 10,
+                                  mainAxisSpacing: isSmallScreen ? 5 : 10,
                                 ),
+                                itemCount: _filteredEbooks.length,
+                                itemBuilder: (context, index) {
+                                  final ebook = _filteredEbooks[index];
+                                  return GestureDetector(
+                                    onTap: () => _showEbookDetails(ebook),
+                                    child: Card(
+                                      elevation: 4,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: ClipRRect(
+                                              borderRadius: const BorderRadius.vertical(
+                                                top: Radius.circular(10),
+                                              ),
+                                              child: ebook.coverUrl != null
+                                                  ? Image.network(
+                                                      ebook.coverUrl!,
+                                                      width: double.infinity,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder: (context, error, stackTrace) =>
+                                                          Container(
+                                                            color: Colors.grey[300],
+                                                            child: const Icon(Icons.book, size: 50),
+                                                          ),
+                                                    )
+                                                  : Container(
+                                                      color: Colors.grey[300],
+                                                      child: const Icon(Icons.book, size: 50),
+                                                    ),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.all(isSmallScreen ? 4.0 : 8.0),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  ebook.title,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: isSmallScreen ? 12 : 14,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                SizedBox(height: isSmallScreen ? 2 : 4),
+                                                Text(
+                                                  ebook.author,
+                                                  style: TextStyle(
+                                                    fontSize: isSmallScreen ? 10 : 12,
+                                                    color: Colors.grey[700],
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               );
                             },
                           ),

@@ -1,3 +1,4 @@
+// Add this at the top of the file with other imports
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -116,6 +117,12 @@ class _OnboardingPagesState extends State<OnboardingPages> {
   } 
 
   Future<void> login(BuildContext context, String email, String password, Function(String?) onError) async {
+    // First validate the email domain
+    if (!EmailValidator.isValidEmail(email)) {
+      onError('your gmail domain is not allowed');
+      return;
+    }
+    
     try {
       final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email.trim(),
@@ -124,7 +131,7 @@ class _OnboardingPagesState extends State<OnboardingPages> {
 
       final userEmail = credential.user?.email ?? '';
 
-      if (userEmail == 'admin@panel.org') {
+      if (userEmail.toLowerCase() == EmailValidator.adminEmail.toLowerCase()) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const AdminPanel()),
@@ -164,6 +171,18 @@ class _OnboardingPagesState extends State<OnboardingPages> {
     String password,
     Function(String?) onError,
   ) async {
+    // First validate the email domain
+    if (!EmailValidator.isValidEmail(email)) {
+      onError('your gmail domain is not allowed');
+      return;
+    }
+    
+    // Don't allow signing up with admin email
+    if (email.trim().toLowerCase() == EmailValidator.adminEmail.toLowerCase()) {
+      onError('Cannot create an account with this email');
+      return;
+    }
+    
     try {
       final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email.trim(),
@@ -429,11 +448,7 @@ class _OnboardingPagesState extends State<OnboardingPages> {
                       fillColor: Colors.white,
                       floatingLabelBehavior: FloatingLabelBehavior.auto,
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) return 'Email is required';
-                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return 'Enter a valid email';
-                      return null;
-                    },
+                    validator: (value) => EmailValidator.validateEmail(value),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -570,5 +585,71 @@ class _OnboardingPagesState extends State<OnboardingPages> {
         ],
       ),
     );
+  }
+}
+
+// Add this utility class for email validation
+class EmailValidator {
+  static final RegExp _validDomainRegex = RegExp(
+    r'^[^@]+@(columbanph\.onmicrosoft\.com)$',
+    caseSensitive: false
+  );
+  
+  static final String adminEmail = 'admin@panel.org';
+  
+  static bool isValidEmail(String email) {
+    // Allow the admin email
+    if (email.trim().toLowerCase() == adminEmail.toLowerCase()) {
+      return true;
+    }
+    
+    // Check if the email matches the allowed domain pattern
+    return _validDomainRegex.hasMatch(email.trim());
+  }
+  
+  static String? validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Email is required';
+    }
+    
+    // First check if it's a valid email format
+    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+      return 'Enter a valid email address';
+    }
+    
+    // Then check if it's from an allowed domain
+    if (!isValidEmail(value)) {
+      return 'your gmail domain is not allowed';
+    }
+    
+    return null;
+  }
+}
+
+// Add this utility class for responsive design
+class ResponsiveUtil {
+  static bool isMobile(BuildContext context) =>
+      MediaQuery.of(context).size.width < 650;
+
+  static bool isTablet(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 650 &&
+      MediaQuery.of(context).size.width < 1100;
+
+  static bool isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 1100;
+      
+  static double getGridCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width < 400) return 1; // Small phones
+    if (width < 650) return 2; // Regular phones
+    if (width < 900) return 3; // Large phones/small tablets
+    if (width < 1200) return 4; // Tablets
+    return 5; // Large tablets/desktops
+  }
+  
+  static double getChildAspectRatio(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width < 400) return 0.8; // Taller cards for small screens
+    return 0.7; // Default aspect ratio
   }
 }
